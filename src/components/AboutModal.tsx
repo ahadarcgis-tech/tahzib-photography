@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { X, ArrowUpRight, Award, Compass, Heart, Camera, Upload } from 'lucide-react';
 import { PRESS_ACCOLADES, CLIENT_TESTIMONIALS } from '../data/portfolioData';
 import { useContent } from '../context/ContentContext';
+import { uploadImageToServer } from '../utils/api';
 
 interface AboutModalProps {
   isOpen: boolean;
