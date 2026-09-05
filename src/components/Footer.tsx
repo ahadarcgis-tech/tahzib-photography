@@ -168,6 +168,14 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onScrollToTop }) => 
                   Inquire & Reserve
                 </button>
               </li>
+              <li>
+                <button
+                  onClick={() => onNavigate('admin')}
+                  className="text-[#DFB15B]/70 hover:text-[#DFB15B] transition-colors cursor-pointer font-mono text-xs flex items-center gap-1 mt-1"
+                >
+                  <span>✦ Studio CMS Admin</span>
+                </button>
+              </li>
             </ul>
           </div>
 
