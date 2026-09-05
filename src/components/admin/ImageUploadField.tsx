@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
-import { Upload, Image as ImageIcon, Link as LinkIcon, Check, X } from 'lucide-react';
+import { Upload, Image as ImageIcon, Link as LinkIcon, Check, X, Loader2 } from 'lucide-react';
+import { uploadImageToServer } from '../../utils/api';
 
 interface ImageUploadFieldProps {
   label: string;
@@ -19,19 +20,23 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
   const [mode, setMode] = useState<'upload' | 'url'>('upload');
   const [urlInput, setUrlInput] = useState(value);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = (file: File) => {
+  const handleFile = async (file: File) => {
     if (!file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      if (result) {
-        onChange(result);
-        setUrlInput(result.length > 60 ? `${result.substring(0, 57)}...` : result);
+    setIsUploading(true);
+    try {
+      const publicUrl = await uploadImageToServer(file);
+      if (publicUrl) {
+        onChange(publicUrl);
+        setUrlInput(publicUrl);
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('Image upload failed:', err);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
