@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import {
   SiteContent,
   BrandInfo,
@@ -49,25 +49,37 @@ interface ContentContextType {
 
 const ContentContext = createContext<ContentContextType | undefined>(undefined);
 
+/**
+ * Merge loaded content over defaults, keeping defaults for any missing keys.
+ */
+function mergeContent(base: SiteContent, override: Partial<SiteContent>): SiteContent {
+  return {
+    ...base,
+    ...override,
+    brand: { ...base.brand, ...(override.brand || {}) },
+    hero: { ...base.hero, ...(override.hero || {}) },
+    about: { ...base.about, ...(override.about || {}) },
+    editorial: { ...base.editorial, ...(override.editorial || {}) },
+    portfolio: Array.isArray(override.portfolio) && override.portfolio.length > 0
+      ? override.portfolio
+      : base.portfolio,
+    services: Array.isArray(override.services) && override.services.length > 0
+      ? override.services
+      : base.services,
+    faqs: Array.isArray(override.faqs) && override.faqs.length > 0
+      ? override.faqs
+      : base.faqs,
+  };
+}
+
 export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // 1. Content State with LocalStorage & Server persistence
+  // ─── 1. Content State ──────────────────────────────────────────────
   const [content, setContent] = useState<SiteContent>(() => {
     if (typeof window !== 'undefined') {
       try {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
-          const parsed = JSON.parse(stored);
-          return {
-            ...DEFAULT_SITE_CONTENT,
-            ...parsed,
-            brand: { ...DEFAULT_SITE_CONTENT.brand, ...(parsed.brand || {}) },
-            hero: { ...DEFAULT_SITE_CONTENT.hero, ...(parsed.hero || {}) },
-            about: { ...DEFAULT_SITE_CONTENT.about, ...(parsed.about || {}) },
-            editorial: { ...DEFAULT_SITE_CONTENT.editorial, ...(parsed.editorial || {}) },
-            portfolio: Array.isArray(parsed.portfolio) && parsed.portfolio.length > 0 ? parsed.portfolio : DEFAULT_SITE_CONTENT.portfolio,
-            services: Array.isArray(parsed.services) && parsed.services.length > 0 ? parsed.services : DEFAULT_SITE_CONTENT.services,
-            faqs: Array.isArray(parsed.faqs) && parsed.faqs.length > 0 ? parsed.faqs : DEFAULT_SITE_CONTENT.faqs,
-          };
+          return mergeContent(DEFAULT_SITE_CONTENT, JSON.parse(stored));
         }
       } catch (e) {
         console.error('Failed to parse stored content:', e);
@@ -76,41 +88,56 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return DEFAULT_SITE_CONTENT;
   });
 
-  // On mount, load latest content from published Git repository JSON file
+  // Track whether we've already loaded remote content this session
+  const hasLoadedRemote = useRef(false);
+
+  // On first mount only, load latest from siteContent.json on disk
+  // This brings in content saved to Git from previous sessions
   useEffect(() => {
+    if (hasLoadedRemote.current) return;
+    hasLoadedRemote.current = true;
+
     fetchRemoteContent().then((remote) => {
       if (remote) {
-        setContent((prev) => ({
-          ...DEFAULT_SITE_CONTENT,
-          ...remote,
-          brand: { ...DEFAULT_SITE_CONTENT.brand, ...(remote.brand || {}) },
-          hero: { ...DEFAULT_SITE_CONTENT.hero, ...(remote.hero || {}) },
-          about: { ...DEFAULT_SITE_CONTENT.about, ...(remote.about || {}) },
-          editorial: { ...DEFAULT_SITE_CONTENT.editorial, ...(remote.editorial || {}) },
-          portfolio: Array.isArray(remote.portfolio) && remote.portfolio.length > 0 ? remote.portfolio : prev.portfolio,
-          services: Array.isArray(remote.services) && remote.services.length > 0 ? remote.services : prev.services,
-          faqs: Array.isArray(remote.faqs) && remote.faqs.length > 0 ? remote.faqs : prev.faqs,
-        }));
+        setContent((prev) => {
+          // Only apply remote if localStorage doesn't have custom edits
+          const localStored = localStorage.getItem(STORAGE_KEY);
+          if (localStored) {
+            // Merge: localStorage wins for fields it has, remote fills gaps
+            const local = JSON.parse(localStored);
+            return mergeContent(DEFAULT_SITE_CONTENT, { ...remote, ...local });
+          }
+          return mergeContent(DEFAULT_SITE_CONTENT, remote);
+        });
       }
     });
   }, []);
 
-  // Sync content state to localStorage and server file (triggers Git Auto-Sync)
+  // Persist to localStorage + server file (→ Git Auto-Sync) on every change
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
+    // Save to localStorage immediately
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(content));
     } catch (e) {
       console.error('Failed to persist content to localStorage:', e);
     }
 
-    const timer = setTimeout(() => {
-      persistContentToServer(content);
-    }, 1000);
+    // Debounce server save to avoid rapid-fire writes
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      persistContentToServer(content).then((ok) => {
+        if (ok) console.log('✅ Content saved to server files → Git auto-sync will commit.');
+      });
+    }, 1500);
 
-    return () => clearTimeout(timer);
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
   }, [content]);
 
-  // 2. Auth Credentials & Session
+  // ─── 2. Auth Credentials & Session ─────────────────────────────────
   const [adminCreds, setAdminCreds] = useState<{ username: string; password: string }>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -152,7 +179,7 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.setItem(CREDS_KEY, JSON.stringify(creds));
   };
 
-  // 3. Content Modifier Methods
+  // ─── 3. Content Modifier Methods ───────────────────────────────────
   const updateBrand = (partial: Partial<BrandInfo>) => {
     setContent((prev) => ({
       ...prev,
@@ -188,14 +215,14 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }));
   };
 
-  const updatePortfolioItem = (id: string, updated: Partial<PortfolioItem>) => {
+  const updatePortfolioItem = useCallback((id: string, updated: Partial<PortfolioItem>) => {
     setContent((prev) => ({
       ...prev,
       portfolio: prev.portfolio.map((item) => (item.id === id ? { ...item, ...updated } : item)),
     }));
-  };
+  }, []);
 
-  const addPortfolioItem = (item: Omit<PortfolioItem, 'id'>) => {
+  const addPortfolioItem = useCallback((item: Omit<PortfolioItem, 'id'>) => {
     const newItem: PortfolioItem = {
       ...item,
       id: `p_${Date.now()}`,
@@ -204,14 +231,14 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       ...prev,
       portfolio: [newItem, ...prev.portfolio],
     }));
-  };
+  }, []);
 
-  const deletePortfolioItem = (id: string) => {
+  const deletePortfolioItem = useCallback((id: string) => {
     setContent((prev) => ({
       ...prev,
       portfolio: prev.portfolio.filter((item) => item.id !== id),
     }));
-  };
+  }, []);
 
   const updateServices = (services: ServicePackage[]) => {
     setContent((prev) => ({
