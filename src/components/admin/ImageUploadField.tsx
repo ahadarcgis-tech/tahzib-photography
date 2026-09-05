@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Upload, Image as ImageIcon, Link as LinkIcon, Check, X, Loader2 } from 'lucide-react';
+import { Upload, Image as ImageIcon, Link as LinkIcon, Check, X, Loader2, CheckCircle2 } from 'lucide-react';
 import { uploadImageToServer } from '../../utils/api';
 
 interface ImageUploadFieldProps {
@@ -21,19 +21,27 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
   const [urlInput, setUrlInput] = useState(value);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = async (file: File) => {
     if (!file.type.startsWith('image/')) return;
     setIsUploading(true);
+    setUploadStatus('idle');
     try {
       const publicUrl = await uploadImageToServer(file);
       if (publicUrl) {
         onChange(publicUrl);
         setUrlInput(publicUrl);
+        setUploadStatus('success');
+        // Auto-dismiss success after 3 seconds
+        setTimeout(() => setUploadStatus('idle'), 3000);
+      } else {
+        setUploadStatus('error');
       }
     } catch (err) {
       console.error('Image upload failed:', err);
+      setUploadStatus('error');
     } finally {
       setIsUploading(false);
     }
@@ -42,6 +50,8 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) handleFile(file);
+    // Reset file input so re-selecting same file triggers change event
+    if (e.target) e.target.value = '';
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -102,7 +112,6 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
               referrerPolicy="no-referrer"
               className="w-full h-full object-cover"
               onError={(e) => {
-                // If broken image
                 (e.target as HTMLElement).style.display = 'none';
               }}
             />
@@ -110,6 +119,11 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
             <div className="text-center p-3 text-[#78716C]">
               <ImageIcon className="w-6 h-6 mx-auto mb-1 opacity-40" />
               <span className="text-[10px] font-mono uppercase tracking-wider block">No Image</span>
+            </div>
+          )}
+          {isUploading && (
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+              <Loader2 className="w-6 h-6 text-[#DFB15B] animate-spin" />
             </div>
           )}
         </div>
@@ -124,11 +138,13 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
               }}
               onDragLeave={() => setIsDragOver(false)}
               onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-              className={`border border-dashed p-4 rounded text-center cursor-pointer transition-colors ${
-                isDragOver
-                  ? 'border-[#DFB15B] bg-[#DFB15B]/10'
-                  : 'border-[#3E3834] bg-[#1A1715] hover:border-[#DFB15B]/60'
+              onClick={() => !isUploading && fileInputRef.current?.click()}
+              className={`border border-dashed p-4 rounded text-center transition-colors ${
+                isUploading
+                  ? 'border-[#DFB15B] bg-[#DFB15B]/5 cursor-wait'
+                  : isDragOver
+                  ? 'border-[#DFB15B] bg-[#DFB15B]/10 cursor-pointer'
+                  : 'border-[#3E3834] bg-[#1A1715] hover:border-[#DFB15B]/60 cursor-pointer'
               }`}
             >
               <input
@@ -138,13 +154,24 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
                 onChange={handleFileChange}
                 className="hidden"
               />
-              <Upload className="w-5 h-5 mx-auto text-[#DFB15B] mb-1.5" />
-              <span className="block text-xs font-mono text-[#F6F3EC]">
-                Click to browse or drop photo here
-              </span>
-              <span className="block text-[10px] font-mono text-[#78716C] mt-0.5">
-                PNG, JPG, WEBP (stored instantly in browser)
-              </span>
+              {isUploading ? (
+                <>
+                  <Loader2 className="w-5 h-5 mx-auto text-[#DFB15B] mb-1.5 animate-spin" />
+                  <span className="block text-xs font-mono text-[#DFB15B]">
+                    Uploading & saving to server...
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Upload className="w-5 h-5 mx-auto text-[#DFB15B] mb-1.5" />
+                  <span className="block text-xs font-mono text-[#F6F3EC]">
+                    Click to browse or drop photo here
+                  </span>
+                  <span className="block text-[10px] font-mono text-[#78716C] mt-0.5">
+                    PNG, JPG, WEBP — Saved permanently to your project & GitHub
+                  </span>
+                </>
+              )}
             </div>
           ) : (
             <div className="flex gap-2">
@@ -165,10 +192,24 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
             </div>
           )}
 
+          {/* Status messages */}
+          {uploadStatus === 'success' && (
+            <div className="flex items-center gap-1.5 text-[11px] font-mono text-green-400">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Image saved permanently! Auto-syncing to GitHub...</span>
+            </div>
+          )}
+          {uploadStatus === 'error' && (
+            <div className="flex items-center gap-1.5 text-[11px] font-mono text-red-400">
+              <X className="w-3.5 h-3.5" />
+              <span>Upload failed. Please try again.</span>
+            </div>
+          )}
+
           {value && (
             <div className="flex items-center justify-between text-[11px] font-mono text-[#78716C]">
               <span className="truncate max-w-[200px]">
-                {value.startsWith('data:') ? 'Custom Uploaded File (Base64)' : value}
+                {value.startsWith('data:') ? 'Uploaded (base64 — will convert on save)' : value}
               </span>
               <button
                 type="button"
