@@ -27,16 +27,16 @@ export const AboutModal: React.FC<AboutModalProps> = ({
     }
   };
 
-  const handleFile = (file: File) => {
+  const handleFile = async (file: File) => {
     if (!file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      if (result) {
-        updateAbout({ portraitUrl: result });
+    try {
+      const publicUrl = await uploadImageToServer(file);
+      if (publicUrl) {
+        updateAbout({ portraitUrl: publicUrl });
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (e) {
+      console.error('Failed to upload portrait:', e);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
