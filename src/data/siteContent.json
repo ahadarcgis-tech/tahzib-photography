@@ -1,0 +1,300 @@
+{
+  "brand": {
+    "name": "Tahzib",
+    "title": "Tahzib Photography",
+    "tagline": "Fine Art & Analog Archive",
+    "location": "Chittagong, Bangladesh",
+    "email": "atelier@tahzib.studio",
+    "phone": "+880 1800-000000",
+    "instagram": "@tahzib.archive",
+    "whatsapp": "+8801800000000",
+    "availability": "Accepting 14 Select Commissions Annually · Worldwide Travel",
+    "colophonText": "Preserving intimate moments, quiet beauty, and generational celebrations through medium format film and poetic restraint. Based in Chittagong, Bangladesh, available for destination weddings and editorial assignments worldwide."
+  },
+  "hero": {
+    "title": "Tahzib Photography",
+    "subtitle": "Timeless Heirloom Imagery",
+    "location": "Based in Chittagong, Bangladesh · Available Worldwide",
+    "leftImage": {
+      "url": "/images/tahzib_crimson_veil.jpg",
+      "caption": "The Crimson Veil · Fine Art Study",
+      "year": "2026",
+      "location": "Dhaka · Private Haveli Estate"
+    },
+    "rightImage": {
+      "url": "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=85",
+      "caption": "Camilla in Draped Silk",
+      "year": "2025",
+      "location": "Villa Balbiano, Lake Como"
+    }
+  },
+  "about": {
+    "portraitUrl": "/images/tahzib.jpg",
+    "title": "Meet Tahzib",
+    "subtitle": "Editorial Eye · Analog Soul",
+    "headlineQuote": "\"We don't manufacture moments; we make quiet space for them to breathe.\"",
+    "bioParagraph1": "Hello, I am Tahzib. Based in Chittagong, Bangladesh, my work is devoted to documenting love stories, generational celebrations, and human devotion through medium-format film and intentional digital framing.",
+    "bioParagraph2": "Trained in classical fine art and documentary photography, I view every wedding as an unrepeatable visual poem. Rather than orchestrating stiff poses or interrupting natural rituals with artificial direction, I observe with quiet intuition—waiting for the spontaneous clasp of hands under the dinner table, the tear caught on a mother's cheek, and the untamed joy on the dance floor.",
+    "baseStudio": "Chittagong, Bangladesh",
+    "accolades": [
+      "Vogue Weddings",
+      "Harper's Bazaar",
+      "Over The Moon",
+      "Kinfolk Magazine",
+      "The Lane",
+      "Anti-Bride",
+      "Rangefinder 30 Rising Stars"
+    ]
+  },
+  "editorial": {
+    "welcomeText": "Based in Chittagong, Bangladesh, Tahzib documents authentic human emotions, heirloom ceremonies, and editorial narratives through analog film and intentional digital framing. Traveling across Bangladesh and worldwide for discerning couples and private commissions.",
+    "badgeSubtitle": "Photography · Chittagong, Bangladesh"
+  },
+  "portfolio": [
+    {
+      "id": "p0",
+      "title": "On Earth, We Exist — Crimson Veil Study",
+      "category": "Weddings",
+      "location": "Dhaka · Private Haveli Estate",
+      "year": "2026",
+      "imageUrl": "/images/tahzib_crimson_veil.jpg",
+      "aspectRatio": "landscape",
+      "filmStock": "Kodak Portra 400 & 35mm Tri-X",
+      "camera": "Contax 645 · Carl Zeiss 80mm f/2",
+      "description": "An ethereal portrait of the bride draped in rich flowing scarlet silk, adorned with heirloom Kundan jewelry. Half of her gaze held in quiet reverence.",
+      "featured": true
+    },
+    {
+      "id": "p1",
+      "title": "Camilla in Draped Silk",
+      "category": "Weddings",
+      "location": "Villa Balbiano, Lake Como",
+      "year": "2025",
+      "imageUrl": "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=85",
+      "aspectRatio": "portrait",
+      "filmStock": "Kodak Tri-X 400",
+      "camera": "Contax 645 · Carl Zeiss 80mm f/2",
+      "description": "A serene quiet moment before the ceremony as Mediterranean afternoon light bathed the terrace.",
+      "featured": true
+    },
+    {
+      "id": "p2",
+      "title": "The Evening Boat Departure",
+      "category": "Weddings",
+      "location": "Bellagio, Italy",
+      "year": "2025",
+      "imageUrl": "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1200&q=85",
+      "aspectRatio": "landscape",
+      "filmStock": "Kodak Portra 800",
+      "camera": "Leica M6 · 35mm Summicron f/2",
+      "description": "Sailing across the calm waters of Como under golden dusk with hand-tied olive garlands.",
+      "featured": true
+    },
+    {
+      "id": "p3",
+      "title": "Elena — Profile Study in Natural Light",
+      "category": "Portraits",
+      "location": "Studio Marais, Paris",
+      "year": "2026",
+      "imageUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=85",
+      "aspectRatio": "portrait",
+      "filmStock": "Ilford HP5 Plus 400",
+      "camera": "Hasselblad 500C/M · Planar 80mm f/2.8",
+      "description": "Sculptural chiaroscuro lighting capturing honest texture, vulnerability, and quiet grace.",
+      "featured": true
+    },
+    {
+      "id": "p4",
+      "title": "Movement, Veil & Sea Salt",
+      "category": "Editorial & Fashion",
+      "location": "Capri, Tyrrhenian Sea",
+      "year": "2025",
+      "imageUrl": "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1200&q=85",
+      "aspectRatio": "portrait",
+      "filmStock": "Kodak Portra 400",
+      "camera": "Contax G2 · Planar 45mm f/2",
+      "description": "Wind-swept cathedral veil capturing kinetic movement and high-fashion editorial fluidity.",
+      "featured": true
+    },
+    {
+      "id": "p5",
+      "title": "Heirloom Rings & Vows on Cotton Rag",
+      "category": "Weddings",
+      "location": "Provence, France",
+      "year": "2025",
+      "imageUrl": "https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=1200&q=85",
+      "aspectRatio": "square",
+      "filmStock": "Fuji Pro 400H",
+      "camera": "Pentax 67 · 105mm f/2.4",
+      "description": "Botanical calligraphed vows penned on deckled cotton paper alongside antique heirloom jewels.",
+      "featured": false
+    },
+    {
+      "id": "p6",
+      "title": "The Courtyard at Dawn",
+      "category": "Destination & Travel",
+      "location": "Fiesole, Florence",
+      "year": "2025",
+      "imageUrl": "https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=1200&q=85",
+      "aspectRatio": "landscape",
+      "filmStock": "Kodak Gold 200",
+      "camera": "Leica M6 · 28mm Elmarit",
+      "description": "Tuscan cypress silhouettes and terracotta warm mist at first light.",
+      "featured": true
+    },
+    {
+      "id": "p7",
+      "title": "Candlelit Tablescape for Forty",
+      "category": "Weddings",
+      "location": "Château de Villette, France",
+      "year": "2025",
+      "imageUrl": "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=1200&q=85",
+      "aspectRatio": "landscape",
+      "filmStock": "CineStill 800T",
+      "camera": "Leica MP · 50mm Summilux f/1.4",
+      "description": "Over 200 hand-dipped beeswax tapers illuminating limoges porcelain and wild overgrown florals.",
+      "featured": false
+    },
+    {
+      "id": "p8",
+      "title": "Analog Gestures & Gaze",
+      "category": "35mm & 120 Film",
+      "location": "Venice, Italy",
+      "year": "2026",
+      "imageUrl": "https://images.unsplash.com/photo-1509967419530-da38b4704bc6?auto=format&fit=crop&w=1200&q=85",
+      "aspectRatio": "portrait",
+      "filmStock": "Kodak Tri-X 400 pushed +1",
+      "camera": "Leica M3 · 50mm Summicron",
+      "description": "Candid intimacy on a private water taxi crossing the Grand Canal toward the Giudecca.",
+      "featured": true
+    },
+    {
+      "id": "p9",
+      "title": "Bridal Atelier Fittings",
+      "category": "Editorial & Fashion",
+      "location": "SoHo, New York",
+      "year": "2026",
+      "imageUrl": "https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&w=1200&q=85",
+      "aspectRatio": "portrait",
+      "filmStock": "Kodak Portra 160",
+      "camera": "Mamiya RZ67 Pro II · Sekor 110mm f/2.8",
+      "description": "Custom silk faille gown with sculptural architectural drape and hand-embroidered veil.",
+      "featured": false
+    },
+    {
+      "id": "p10",
+      "title": "Dancing Under Ancient Olive Groves",
+      "category": "Weddings",
+      "location": "Puglia, Italy",
+      "year": "2025",
+      "imageUrl": "https://images.unsplash.com/photo-1544078751-58fee2d8a03b?auto=format&fit=crop&w=1200&q=85",
+      "aspectRatio": "landscape",
+      "filmStock": "Ilford Delta 3200",
+      "camera": "Contax T2 · 38mm Sonnar",
+      "description": "Spontaneous midnight celebrations illuminated exclusively by string lights and sparklers.",
+      "featured": true
+    },
+    {
+      "id": "p11",
+      "title": "The Artist at the Harbor",
+      "category": "Portraits",
+      "location": "Hydra, Greece",
+      "year": "2025",
+      "imageUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=1200&q=85",
+      "aspectRatio": "portrait",
+      "filmStock": "Kodak Portra 400",
+      "camera": "Hasselblad 500C/M · 80mm Planar",
+      "description": "Quiet contemplation along whitewashed stone alleys as fishing schooners return.",
+      "featured": false
+    },
+    {
+      "id": "p12",
+      "title": "Mist Over The Highlands",
+      "category": "Destination & Travel",
+      "location": "Isle of Skye, Scotland",
+      "year": "2025",
+      "imageUrl": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=85",
+      "aspectRatio": "landscape",
+      "filmStock": "Fuji Velvia 50",
+      "camera": "Linhof Master Technika 4x5",
+      "description": "Rolling moody clouds sweeping over ancient granite peaks and lochs.",
+      "featured": false
+    }
+  ],
+  "services": [
+    {
+      "id": "s1",
+      "title": "The Destination Weekend",
+      "tagline": "Complete multi-day editorial coverage for bespoke celebrations worldwide.",
+      "investment": "Starting at $14,500",
+      "duration": "3 Days / Up to 22 Hours",
+      "description": "Designed for couples orchestrating immersive destination weddings. We document every facet—from the welcome aperitivo and rehearsal dinner, through the full wedding day, to the morning farewell brunch.",
+      "idealFor": "Villa weddings in Italy, châteaux in France, private estates in Mallorca, Hudson Valley, or Napa.",
+      "features": [
+        "Comprehensive 3-day continuous documentation (Welcome Event, Wedding Day, Farewell Brunch)",
+        "Dual Medium: Contax 645 / Leica 35mm film alongside state-of-the-art digital sensors",
+        "Lead Photographer Tahzib + Senior Associate Film Documentarian",
+        "Full laboratory processing, scan curation, and master tone grading",
+        "Bespoke hand-bound linen heirloom art album (12x12, 60 pages) handcrafted in Florence",
+        "Private online gallery with full-resolution downloads and perpetual cloud archiving",
+        "Curated editorial preview gallery delivered within 5 days of your celebration",
+        "All travel and accommodation expenses included in contiguous European and US destinations"
+      ]
+    },
+    {
+      "id": "s2",
+      "title": "The Signature Wedding Day",
+      "tagline": "Unobtrusive, elevated storytelling focused on authentic connection and editorial elegance.",
+      "investment": "Starting at $9,200",
+      "duration": "Full Day / Up to 10 Hours",
+      "description": "Our core commission for single-day celebrations. Seamlessly blending documentary candids with timeless, flattering portraits that belong in the pages of high fashion editorials.",
+      "idealFor": "Couples valuing authentic emotion, organic light, and high-fashion sensibility.",
+      "features": [
+        "Up to 10 hours of seamless artistic and documentary coverage by Tahzib",
+        "Curated mix of 120 medium format, 35mm analog film, and high-dynamic-range digital captures",
+        "Complimentary pre-wedding consultation, moodboard curation, and custom timeline advisory",
+        "700+ meticulously color-graded and retouched master images",
+        "Private client gallery with printing rights and archival store access",
+        "Curated preview set delivered within one week of wedding day"
+      ]
+    },
+    {
+      "id": "s3",
+      "title": "The Editorial Elopement & Intimate Commission",
+      "tagline": "Quiet, cinematic poetry for celebrations of up to 25 guests.",
+      "investment": "Starting at $5,800",
+      "duration": "Up to 5 Hours",
+      "description": "Stripped of excess, centered wholly on two people committing their lives to one another in an awe-inspiring natural or architectural landscape.",
+      "idealFor": "Intimate cliffside vows, city hall elopements in Paris or New York, remote alpine sanctuaries.",
+      "features": [
+        "Up to 5 hours of dedicated storytelling coverage by Tahzib",
+        "Hand-developed 35mm film rolls included",
+        "Location scouting and natural-light timing coordination",
+        "350+ finely crafted heirloom photographs",
+        "Expedited 2-week final delivery with custom slide presentation"
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "q": "How does shooting analog film work for a wedding?",
+      "a": "We carry both medium-format cameras (Contax 645, Hasselblad) and modern digital bodies side by side. Tahzib photographs the key emotional moments, bridal details, and couple portraits on film for that incomparable painterly grain and luminous depth. After the celebration, the rolls are hand-delivered to our partner pro laboratory, developed in fresh chemistry, and high-resolution drum scanned."
+    },
+    {
+      "q": "Are travel and accommodations included in your pricing?",
+      "a": "For our signature Destination Weekend collection, travel and accommodation within Europe and nationwide in Bangladesh are fully included with zero surprise expenses. For bespoke regional commissions, we provide a flat, transparent travel quote upfront."
+    },
+    {
+      "q": "When will we receive our photographs?",
+      "a": "You will receive a curated Editorial Preview of 40–60 fully graded images within 5 business days of your celebration to share with family and friends. Your full complete gallery and scanned film negatives are delivered within 6 to 8 weeks."
+    },
+    {
+      "q": "How far in advance should we reserve our date?",
+      "a": "Because we limit our calendar to 14 commissions annually to maintain our highest standards of craft, most couples reserve their date 9 to 18 months in advance."
+    },
+    {
+      "q": "Do you provide black & white as well as color imagery?",
+      "a": "Yes, every commission incorporates a deliberate curation of Kodak Tri-X / Ilford 400 black-and-white analog frames alongside rich, natural Fuji 400H and Portra 400 color tones, carefully matched to the emotional cadence of your celebration."
+    }
+  ]
+}
