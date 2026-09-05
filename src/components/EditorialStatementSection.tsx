@@ -23,8 +23,8 @@ export const EditorialStatementSection: React.FC<EditorialStatementSectionProps>
     offset: ['start end', 'end start'],
   });
 
-  // Subtle counter-movement: as the user scrolls, the background image shifts counterly
-  const bgY = useTransform(scrollYProgress, [0, 1], ['-6%', '6%']);
+  // Background image parallax movement increased by 40% (-6%..6% -> -8.4%..8.4%)
+  const bgY = useTransform(scrollYProgress, [0, 1], ['-8.4%', '8.4%']);
 
   return (
     <section 
@@ -35,7 +35,7 @@ export const EditorialStatementSection: React.FC<EditorialStatementSectionProps>
       {/* Background Image Layer with Counter-Movement */}
       <motion.div 
         style={{ y: bgY }}
-        className="absolute -top-[8%] -bottom-[8%] left-0 right-0 h-[116%] w-full z-0 pointer-events-none will-change-transform"
+        className="absolute -top-[12%] -bottom-[12%] left-0 right-0 h-[124%] w-full z-0 pointer-events-none will-change-transform"
       >
         <img
           src="/images/tahzib_crimson_veil.jpg"
