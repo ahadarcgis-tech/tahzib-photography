@@ -10,6 +10,7 @@ import {
   FaqItem,
 } from '../types';
 import { DEFAULT_SITE_CONTENT } from '../data/defaultContent';
+import { fetchRemoteContent, persistContentToServer, uploadImageToServer } from '../utils/api';
 
 const STORAGE_KEY = 'tahzib_site_content_v2';
 const AUTH_KEY = 'tahzib_admin_auth_v2';
@@ -36,6 +37,7 @@ interface ContentContextType {
   resetToDefaults: () => void;
   exportJson: () => string;
   importJson: (jsonString: string) => boolean;
+  uploadImage: (file: File) => Promise<string>;
 
   // Authentication
   isAuthenticated: boolean;
@@ -48,7 +50,7 @@ interface ContentContextType {
 const ContentContext = createContext<ContentContextType | undefined>(undefined);
 
 export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // 1. Content State with LocalStorage persistence
+  // 1. Content State with LocalStorage & Server persistence
   const [content, setContent] = useState<SiteContent>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -74,13 +76,38 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return DEFAULT_SITE_CONTENT;
   });
 
-  // Sync content state to localStorage whenever it changes
+  // On mount, load latest content from published Git repository JSON file
+  useEffect(() => {
+    fetchRemoteContent().then((remote) => {
+      if (remote) {
+        setContent((prev) => ({
+          ...DEFAULT_SITE_CONTENT,
+          ...remote,
+          brand: { ...DEFAULT_SITE_CONTENT.brand, ...(remote.brand || {}) },
+          hero: { ...DEFAULT_SITE_CONTENT.hero, ...(remote.hero || {}) },
+          about: { ...DEFAULT_SITE_CONTENT.about, ...(remote.about || {}) },
+          editorial: { ...DEFAULT_SITE_CONTENT.editorial, ...(remote.editorial || {}) },
+          portfolio: Array.isArray(remote.portfolio) && remote.portfolio.length > 0 ? remote.portfolio : prev.portfolio,
+          services: Array.isArray(remote.services) && remote.services.length > 0 ? remote.services : prev.services,
+          faqs: Array.isArray(remote.faqs) && remote.faqs.length > 0 ? remote.faqs : prev.faqs,
+        }));
+      }
+    });
+  }, []);
+
+  // Sync content state to localStorage and server file (triggers Git Auto-Sync)
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(content));
     } catch (e) {
       console.error('Failed to persist content to localStorage:', e);
     }
+
+    const timer = setTimeout(() => {
+      persistContentToServer(content);
+    }, 1000);
+
+    return () => clearTimeout(timer);
   }, [content]);
 
   // 2. Auth Credentials & Session
