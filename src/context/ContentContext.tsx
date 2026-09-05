@@ -322,6 +322,7 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         resetToDefaults,
         exportJson,
         importJson,
+        uploadImage: uploadImageToServer,
         isAuthenticated,
         login,
         logout,
