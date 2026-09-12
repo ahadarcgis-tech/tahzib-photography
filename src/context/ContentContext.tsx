@@ -10,7 +10,13 @@ import {
   FaqItem,
 } from '../types';
 import { DEFAULT_SITE_CONTENT } from '../data/defaultContent';
-import { fetchRemoteContent, persistContentToServer, uploadImageToServer } from '../utils/api';
+import {
+  fetchRemoteContent,
+  persistContentToServer,
+  uploadImageToServer,
+  getStoredGithubToken,
+  setStoredGithubToken,
+} from '../utils/api';
 
 const STORAGE_KEY = 'tahzib_site_content_v2';
 const AUTH_KEY = 'tahzib_admin_auth_v2';
@@ -39,13 +45,15 @@ interface ContentContextType {
   importJson: (jsonString: string) => boolean;
   uploadImage: (file: File) => Promise<string>;
 
-  // Authentication
+  // Authentication & GitHub Token
   isAuthenticated: boolean;
   login: (username: string, password: string) => boolean;
   logout: () => void;
   adminUsername: string;
   changeCredentials: (newUsername: string, newPassword: string) => void;
   isLiveSite: boolean;
+  githubToken: string;
+  saveGithubToken: (token: string) => void;
 }
 
 const ContentContext = createContext<ContentContextType | undefined>(undefined);
@@ -78,9 +86,16 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     window.location.hostname !== 'localhost' && 
     window.location.hostname !== '127.0.0.1';
 
+  const [githubToken, setGithubTokenState] = useState<string>(() => getStoredGithubToken());
+
+  const saveGithubToken = useCallback((token: string) => {
+    setStoredGithubToken(token);
+    setGithubTokenState(token.trim());
+  }, []);
+
   // ─── 1. Content State ──────────────────────────────────────────────
   const [content, setContent] = useState<SiteContent>(() => {
-    if (typeof window !== 'undefined' && !isLiveSite) {
+    if (typeof window !== 'undefined') {
       try {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
@@ -96,8 +111,7 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Track whether we've already loaded remote content this session
   const hasLoadedRemote = useRef(false);
 
-  // On first mount only, load latest from siteContent.json on disk
-  // This brings in content saved to Git from previous sessions
+  // On first mount only, load latest from siteContent.json
   useEffect(() => {
     if (hasLoadedRemote.current) return;
     hasLoadedRemote.current = true;
@@ -105,49 +119,42 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     fetchRemoteContent().then((remote) => {
       if (remote) {
         setContent((prev) => {
-          if (isLiveSite) {
-            return mergeContent(DEFAULT_SITE_CONTENT, remote);
-          }
-          // Only apply remote if localStorage doesn't have custom edits
           const localStored = localStorage.getItem(STORAGE_KEY);
           if (localStored) {
-            // Merge: localStorage wins for fields it has, remote fills gaps
-            const local = JSON.parse(localStored);
-            return mergeContent(DEFAULT_SITE_CONTENT, { ...remote, ...local });
+            try {
+              const local = JSON.parse(localStored);
+              return mergeContent(DEFAULT_SITE_CONTENT, { ...remote, ...local });
+            } catch { }
           }
           return mergeContent(DEFAULT_SITE_CONTENT, remote);
         });
       }
     });
-  }, [isLiveSite]);
+  }, []);
 
-  // Persist to localStorage + server file (→ Git Auto-Sync) on every change
+  // Persist to localStorage + server/GitHub API on every change
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    // Save to localStorage immediately (only if not on live site)
-    if (!isLiveSite) {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(content));
-      } catch (e) {
-        console.error('Failed to persist content to localStorage:', e);
-      }
+    // Save to localStorage immediately
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(content));
+    } catch (e) {
+      console.error('Failed to persist content to localStorage:', e);
     }
 
-    // Debounce server save to avoid rapid-fire writes
+    // Debounce server/GitHub save to avoid rapid-fire requests
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
-      if (!isLiveSite) {
-        persistContentToServer(content).then((ok) => {
-          if (ok) console.log('✅ Content saved to server files → Git auto-sync will commit.');
-        });
-      }
-    }, 1500);
+      persistContentToServer(content).then((ok) => {
+        if (ok) console.log('✅ Content persisted to server/GitHub successfully.');
+      });
+    }, 1200);
 
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [content, isLiveSite]);
+  }, [content]);
 
   // ─── 2. Auth Credentials & Session ─────────────────────────────────
   const [adminCreds, setAdminCreds] = useState<{ username: string; password: string }>(() => {
@@ -368,6 +375,8 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         adminUsername: adminCreds.username,
         changeCredentials,
         isLiveSite,
+        githubToken,
+        saveGithubToken,
       }}
     >
       {children}
@@ -382,3 +391,4 @@ export const useContent = () => {
   }
   return context;
 };
+
