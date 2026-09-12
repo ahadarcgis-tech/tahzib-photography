@@ -21,11 +21,8 @@ import {
   Eye,
   AlertCircle,
   Lock,
-  RefreshCw,
-  Cloud,
 } from 'lucide-react';
 import { useContent } from '../../context/ContentContext';
-import { persistContentToServer } from '../../utils/api';
 import { ImageUploadField } from './ImageUploadField';
 import { PortfolioCategory, PortfolioItem, ServicePackage, FaqItem } from '../../types';
 
@@ -61,23 +58,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onViewLiveSite }
 
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [isManualSyncing, setIsManualSyncing] = useState(false);
-
-  const handleManualSync = async () => {
-    setIsManualSyncing(true);
-    try {
-      const res = await persistContentToServer(content);
-      if (res.success) {
-        showToast('All changes saved to server & GitHub auto-synced across devices!');
-      } else {
-        showToast('Sync request completed.');
-      }
-    } catch (e) {
-      showToast('Sync failed. Please check server connection.');
-    } finally {
-      setIsManualSyncing(false);
-    }
-  };
 
   // Portfolio item editing / creating state
   const [editingItem, setEditingItem] = useState<PortfolioItem | null>(null);
@@ -257,26 +237,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onViewLiveSite }
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Live Sync Status Indicator */}
-          <div className="hidden lg:flex items-center gap-2 bg-[#1A1715] border border-[#2E2925] px-3 py-1.5 rounded-full text-[11px] font-mono">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span className="text-[#A8A29E]">Multi-Device Live Sync</span>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleManualSync}
-            disabled={isManualSyncing}
-            className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider bg-[#DFB15B]/10 hover:bg-[#DFB15B]/20 text-[#DFB15B] border border-[#DFB15B]/30 px-3 py-2 rounded transition-colors cursor-pointer"
-            title="Immediately commit & push changes to GitHub"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isManualSyncing ? 'animate-spin' : ''}`} />
-            <span>{isManualSyncing ? 'Syncing...' : 'Sync to GitHub'}</span>
-          </button>
-
           <button
             onClick={onViewLiveSite}
             className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider bg-[#241F1C] hover:bg-[#342D28] text-[#DFB15B] border border-[#3E3834] px-3.5 py-2 rounded transition-colors cursor-pointer"
@@ -320,11 +280,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onViewLiveSite }
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as TabType)}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded text-xs font-mono tracking-wider transition-colors cursor-pointer ${
-                  isActive
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded text-xs font-mono tracking-wider transition-colors cursor-pointer ${isActive
                     ? 'bg-[#DFB15B] text-[#12100E] font-semibold shadow-md'
                     : 'text-[#A8A29E] hover:bg-[#1E1B18] hover:text-[#F6F3EC]'
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-2.5">
                   <Icon className="w-4 h-4" />
@@ -332,9 +291,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onViewLiveSite }
                 </div>
                 {tab.badge !== undefined && (
                   <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${
-                      isActive ? 'bg-[#12100E]/20 text-[#12100E]' : 'bg-[#2E2925] text-[#78716C]'
-                    }`}
+                    className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${isActive ? 'bg-[#12100E]/20 text-[#12100E]' : 'bg-[#2E2925] text-[#78716C]'
+                      }`}
                   >
                     {tab.badge}
                   </span>
@@ -857,11 +815,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onViewLiveSite }
                   <button
                     key={cat}
                     onClick={() => setPortfolioFilter(cat)}
-                    className={`px-3 py-1 rounded text-xs font-mono transition-colors cursor-pointer ${
-                      portfolioFilter === cat
+                    className={`px-3 py-1 rounded text-xs font-mono transition-colors cursor-pointer ${portfolioFilter === cat
                         ? 'bg-[#DFB15B] text-[#12100E] font-semibold'
                         : 'bg-[#141210] text-[#78716C] hover:text-[#F6F3EC] border border-[#2E2925]'
-                    }`}
+                      }`}
                   >
                     {cat}
                   </button>

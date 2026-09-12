@@ -1,10 +1,5 @@
 import { SiteContent } from '../types';
 
-export interface RemoteContentResponse {
-  content: SiteContent;
-  timestamp: number;
-}
-
 /**
  * Upload an image file to the local server backend.
  * The backend saves it into /public/uploads/ which triggers Git Auto-Sync.
@@ -48,7 +43,7 @@ export async function uploadImageToServer(file: File): Promise<string> {
         console.warn('Backend upload unavailable, using base64 fallback:', err);
       }
 
-      // Fallback to base64 data URL; backend save-content will extract and save it as a file
+      // Fallback to direct base64 data URL if backend API is unreachable
       resolve(base64);
     };
 
@@ -59,9 +54,9 @@ export async function uploadImageToServer(file: File): Promise<string> {
 
 /**
  * Persist site content changes to disk and public repository files.
- * Returns the updated content (with any extracted images) and timestamp.
+ * This ensures changes are recorded in Git and available across all devices.
  */
-export async function persistContentToServer(content: SiteContent): Promise<{ success: boolean; content?: SiteContent; timestamp?: number }> {
+export async function persistContentToServer(content: SiteContent): Promise<boolean> {
   try {
     const response = await fetch('/api/save-content', {
       method: 'POST',
@@ -70,51 +65,36 @@ export async function persistContentToServer(content: SiteContent): Promise<{ su
       },
       body: JSON.stringify({ content }),
     });
-
-    if (response.ok) {
-      const data = await response.json();
-      return { success: true, content: data.content, timestamp: data.timestamp };
-    }
-    return { success: false };
+    return response.ok;
   } catch (err) {
     console.warn('Failed to persist content to server:', err);
-    return { success: false };
+    return false;
   }
 }
 
 /**
  * Load latest content from server API or published repository JSON file.
- * Returns both the content object and the server modification timestamp.
  */
-export async function fetchRemoteContent(): Promise<RemoteContentResponse | null> {
+export async function fetchRemoteContent(): Promise<SiteContent | null> {
   try {
     // Try /api/content first to get fresh data directly from disk
-    const res = await fetch(`/api/content?t=${Date.now()}`, {
-      headers: { 'Cache-Control': 'no-cache' },
-    });
+    // This is crucial in dev mode to bypass Vite's static file caching
+    const res = await fetch(`/api/content?t=${Date.now()}`);
     if (res.ok) {
       const data = await res.json();
       if (data && data.content) {
-        return {
-          content: data.content as SiteContent,
-          timestamp: data.timestamp || Date.now(),
-        };
+        return data.content as SiteContent;
       }
     }
-  } catch (e) {}
+  } catch (e) { }
 
   try {
     // Try /siteContent.json as a fallback (available on static hosting / Vercel)
-    const res = await fetch(`/siteContent.json?t=${Date.now()}`, {
-      headers: { 'Cache-Control': 'no-cache' },
-    });
+    const res = await fetch(`/siteContent.json?t=${Date.now()}`);
     if (res.ok) {
       const data = await res.json();
       if (data && typeof data === 'object' && data.brand) {
-        return {
-          content: data as SiteContent,
-          timestamp: Date.now(),
-        };
+        return data as SiteContent;
       }
     }
   } catch (e) {
