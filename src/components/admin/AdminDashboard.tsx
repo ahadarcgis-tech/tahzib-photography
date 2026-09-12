@@ -220,23 +220,50 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onViewLiveSite }
         </div>
       )}
 
-      {/* Live Site Warning Banner */}
-      {isLiveSite && (
-        <div className="bg-red-900/90 text-white px-4 sm:px-8 py-3 flex flex-col md:flex-row items-center justify-between shadow-md z-50 border-b border-red-800">
-          <div className="flex items-center gap-3 mb-2 md:mb-0">
-            <AlertCircle className="w-5 h-5 text-red-300" />
-            <div>
-              <h3 className="font-medium text-sm">Read-Only Mode: Live Site</h3>
-              <p className="text-red-200 text-xs">
-                You are viewing the live Netlify site. Changes made here will NOT be permanent and image uploads will fail.
-              </p>
+      {/* Cloud Auto-Sync Banner */}
+      <div className="bg-[#191512] text-[#F6F3EC] px-4 sm:px-8 py-3.5 border-b border-[#2E2925] flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className={`w-3 h-3 rounded-full ${githubToken ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-xs font-mono uppercase tracking-wider text-[#DFB15B]">
+                {githubToken ? '⚡ GitHub Cloud Sync: Active' : '☁️ Cloud Auto-Sync Setup (Browser Uploads)'}
+              </span>
             </div>
-          </div>
-          <div className="text-xs font-mono bg-red-950 px-3 py-1.5 rounded border border-red-700 text-center text-red-200">
-            To edit, run <code className="text-red-300 bg-black/30 px-1 py-0.5 rounded mx-1">npm run dev</code> locally
+            <p className="text-[#A8A29E] text-xs">
+              {githubToken
+                ? 'Uploaded images & edits are committed directly to GitHub (ahadarcgis-tech/tahzib-photography) and synced across all devices.'
+                : 'Enter your GitHub Personal Access Token below to enable permanent image uploads directly from your browser without running npm run dev locally.'}
+            </p>
           </div>
         </div>
-      )}
+
+        {!githubToken && (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              saveGithubToken(tokenInput);
+              setToastMessage('✅ GitHub Token Saved! Browser uploads now sync directly to GitHub repo.');
+              setTimeout(() => setToastMessage(null), 4000);
+            }}
+            className="flex items-center gap-2 w-full md:w-auto"
+          >
+            <input
+              type="password"
+              placeholder="Paste GitHub Token (ghp_...)"
+              value={tokenInput}
+              onChange={(e) => setTokenInput(e.target.value)}
+              className="bg-[#12100E] border border-[#3E3834] text-xs font-mono text-[#F6F3EC] px-3 py-1.5 rounded focus:outline-none focus:border-[#DFB15B] w-full md:w-64"
+            />
+            <button
+              type="submit"
+              className="bg-[#DFB15B] hover:bg-[#C99E4B] text-[#12100E] text-xs font-mono font-semibold uppercase tracking-wider px-3.5 py-1.5 rounded transition-colors whitespace-nowrap cursor-pointer"
+            >
+              Enable Sync
+            </button>
+          </form>
+        )}
+      </div>
 
       {/* Top Navigation Bar */}
       <header className="sticky top-0 z-40 bg-[#171412]/95 backdrop-blur-md border-b border-[#2E2925] px-4 sm:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
