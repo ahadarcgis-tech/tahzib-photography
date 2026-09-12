@@ -45,6 +45,7 @@ interface ContentContextType {
   logout: () => void;
   adminUsername: string;
   changeCredentials: (newUsername: string, newPassword: string) => void;
+  isLiveSite: boolean;
 }
 
 const ContentContext = createContext<ContentContextType | undefined>(undefined);
@@ -73,9 +74,13 @@ function mergeContent(base: SiteContent, override: Partial<SiteContent>): SiteCo
 }
 
 export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const isLiveSite = typeof window !== 'undefined' && 
+    window.location.hostname !== 'localhost' && 
+    window.location.hostname !== '127.0.0.1';
+
   // ─── 1. Content State ──────────────────────────────────────────────
   const [content, setContent] = useState<SiteContent>(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && !isLiveSite) {
       try {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
@@ -100,6 +105,9 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     fetchRemoteContent().then((remote) => {
       if (remote) {
         setContent((prev) => {
+          if (isLiveSite) {
+            return mergeContent(DEFAULT_SITE_CONTENT, remote);
+          }
           // Only apply remote if localStorage doesn't have custom edits
           const localStored = localStorage.getItem(STORAGE_KEY);
           if (localStored) {
@@ -111,31 +119,35 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         });
       }
     });
-  }, []);
+  }, [isLiveSite]);
 
   // Persist to localStorage + server file (→ Git Auto-Sync) on every change
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    // Save to localStorage immediately
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(content));
-    } catch (e) {
-      console.error('Failed to persist content to localStorage:', e);
+    // Save to localStorage immediately (only if not on live site)
+    if (!isLiveSite) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(content));
+      } catch (e) {
+        console.error('Failed to persist content to localStorage:', e);
+      }
     }
 
     // Debounce server save to avoid rapid-fire writes
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
-      persistContentToServer(content).then((ok) => {
-        if (ok) console.log('✅ Content saved to server files → Git auto-sync will commit.');
-      });
+      if (!isLiveSite) {
+        persistContentToServer(content).then((ok) => {
+          if (ok) console.log('✅ Content saved to server files → Git auto-sync will commit.');
+        });
+      }
     }, 1500);
 
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [content]);
+  }, [content, isLiveSite]);
 
   // ─── 2. Auth Credentials & Session ─────────────────────────────────
   const [adminCreds, setAdminCreds] = useState<{ username: string; password: string }>(() => {
@@ -355,6 +367,7 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         logout,
         adminUsername: adminCreds.username,
         changeCredentials,
+        isLiveSite,
       }}
     >
       {children}
