@@ -10,11 +10,12 @@ import {
   FaqItem,
 } from '../types';
 import { DEFAULT_SITE_CONTENT } from '../data/defaultContent';
+import initialSiteContent from '../data/siteContent.json';
 import { fetchRemoteContent, persistContentToServer, uploadImageToServer } from '../utils/api';
 
-const STORAGE_KEY = 'tahzib_site_content_v2';
 const AUTH_KEY = 'tahzib_admin_auth_v2';
 const CREDS_KEY = 'tahzib_admin_creds_v2';
+const BROADCAST_NAME = 'tahzib_live_sync_v1';
 
 interface ContentContextType {
   content: SiteContent;
@@ -74,70 +75,115 @@ function mergeContent(base: SiteContent, override: Partial<SiteContent>): SiteCo
 
 export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // ─── 1. Content State ──────────────────────────────────────────────
+  // Initialize directly from saved siteContent.json file on disk (single source of truth)
   const [content, setContent] = useState<SiteContent>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          return mergeContent(DEFAULT_SITE_CONTENT, JSON.parse(stored));
-        }
-      } catch (e) {
-        console.error('Failed to parse stored content:', e);
-      }
-    }
-    return DEFAULT_SITE_CONTENT;
+    return mergeContent(DEFAULT_SITE_CONTENT, initialSiteContent as Partial<SiteContent>);
   });
 
-  // Track whether we've already loaded remote content this session
-  const hasLoadedRemote = useRef(false);
+  const lastServerTimestamp = useRef<number>(0);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isSavingRef = useRef<boolean>(false);
+  const broadcastChannelRef = useRef<BroadcastChannel | null>(null);
 
-  // On first mount only, load latest from siteContent.json on disk
-  // This brings in content saved to Git from previous sessions
-  useEffect(() => {
-    if (hasLoadedRemote.current) return;
-    hasLoadedRemote.current = true;
-
-    fetchRemoteContent().then((remote) => {
-      if (remote) {
-        setContent((prev) => {
-          // Only apply remote if localStorage doesn't have custom edits
-          const localStored = localStorage.getItem(STORAGE_KEY);
-          if (localStored) {
-            // Merge: localStorage wins for fields it has, remote fills gaps
-            const local = JSON.parse(localStored);
-            return mergeContent(DEFAULT_SITE_CONTENT, { ...remote, ...local });
+  // Queue server save whenever user edits content in the admin interface
+  const queueServerSave = useCallback((newContent: SiteContent) => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(async () => {
+      isSavingRef.current = true;
+      try {
+        const result = await persistContentToServer(newContent);
+        if (result.success) {
+          if (result.timestamp) {
+            lastServerTimestamp.current = result.timestamp;
           }
-          return mergeContent(DEFAULT_SITE_CONTENT, remote);
-        });
+          // If the server extracted any base64 images into physical files, update state with clean URLs
+          if (result.content) {
+            setContent(result.content);
+            if (broadcastChannelRef.current) {
+              broadcastChannelRef.current.postMessage({
+                type: 'CONTENT_UPDATED',
+                content: result.content,
+                timestamp: result.timestamp || Date.now(),
+              });
+            }
+          }
+          console.log('✅ Content saved to server & GitHub auto-sync triggered.');
+        }
+      } catch (err) {
+        console.error('Failed to persist content to server:', err);
+      } finally {
+        isSavingRef.current = false;
       }
-    });
+    }, 600);
   }, []);
 
-  // Persist to localStorage + server file (→ Git Auto-Sync) on every change
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
+  // ─── 2. Cross-Tab Live Synchronization (Same Browser) ──────────────
   useEffect(() => {
-    // Save to localStorage immediately
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(content));
-    } catch (e) {
-      console.error('Failed to persist content to localStorage:', e);
+    if (typeof BroadcastChannel !== 'undefined') {
+      try {
+        const bc = new BroadcastChannel(BROADCAST_NAME);
+        broadcastChannelRef.current = bc;
+        bc.onmessage = (event) => {
+          if (event.data?.type === 'CONTENT_UPDATED' && event.data.content) {
+            setContent(event.data.content);
+            if (event.data.timestamp) {
+              lastServerTimestamp.current = event.data.timestamp;
+            }
+          }
+        };
+        return () => {
+          bc.close();
+        };
+      } catch (e) {}
     }
+  }, []);
 
-    // Debounce server save to avoid rapid-fire writes
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => {
-      persistContentToServer(content).then((ok) => {
-        if (ok) console.log('✅ Content saved to server files → Git auto-sync will commit.');
-      });
-    }, 1500);
+  // ─── 3. Multi-Device Live Synchronization (All Devices & Browsers) ──
+  useEffect(() => {
+    let isMounted = true;
+
+    const syncWithServer = async () => {
+      // Avoid overwriting state if currently saving local edits
+      if (isSavingRef.current) return;
+
+      try {
+        const remote = await fetchRemoteContent();
+        if (!isMounted || !remote) return;
+
+        // If server timestamp is newer than our local timestamp, update smoothly
+        if (remote.timestamp > lastServerTimestamp.current) {
+          lastServerTimestamp.current = remote.timestamp;
+          setContent(mergeContent(DEFAULT_SITE_CONTENT, remote.content));
+        }
+      } catch (err) {
+        // Network offline or server starting
+      }
+    };
+
+    // Initial fetch on mount
+    syncWithServer();
+
+    // Poll every 3 seconds for live multi-device updates across all browsers & phones
+    const interval = setInterval(syncWithServer, 3000);
+
+    // Sync immediately when user switches tabs or wakes phone
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        syncWithServer();
+      }
+    };
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', syncWithServer);
 
     return () => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      isMounted = false;
+      clearInterval(interval);
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', syncWithServer);
     };
-  }, [content]);
+  }, []);
 
-  // ─── 2. Auth Credentials & Session ─────────────────────────────────
+  // ─── 4. Auth Credentials & Session ─────────────────────────────────
   const [adminCreds, setAdminCreds] = useState<{ username: string; password: string }>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -179,152 +225,192 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.setItem(CREDS_KEY, JSON.stringify(creds));
   };
 
-  // ─── 3. Content Modifier Methods ───────────────────────────────────
-  const updateBrand = (partial: Partial<BrandInfo>) => {
-    setContent((prev) => ({
-      ...prev,
-      brand: { ...prev.brand, ...partial },
-    }));
-  };
+  // ─── 5. Content Modifier Methods ───────────────────────────────────
+  const updateBrand = useCallback((partial: Partial<BrandInfo>) => {
+    setContent((prev) => {
+      const next = { ...prev, brand: { ...prev.brand, ...partial } };
+      queueServerSave(next);
+      return next;
+    });
+  }, [queueServerSave]);
 
-  const updateHero = (partial: Partial<HeroInfo>) => {
-    setContent((prev) => ({
-      ...prev,
-      hero: { ...prev.hero, ...partial },
-    }));
-  };
+  const updateHero = useCallback((partial: Partial<HeroInfo>) => {
+    setContent((prev) => {
+      const next = { ...prev, hero: { ...prev.hero, ...partial } };
+      queueServerSave(next);
+      return next;
+    });
+  }, [queueServerSave]);
 
-  const updateAbout = (partial: Partial<AboutInfo>) => {
-    setContent((prev) => ({
-      ...prev,
-      about: { ...prev.about, ...partial },
-    }));
-  };
+  const updateAbout = useCallback((partial: Partial<AboutInfo>) => {
+    setContent((prev) => {
+      const next = { ...prev, about: { ...prev.about, ...partial } };
+      queueServerSave(next);
+      return next;
+    });
+  }, [queueServerSave]);
 
-  const updateEditorial = (partial: Partial<EditorialInfo>) => {
-    setContent((prev) => ({
-      ...prev,
-      editorial: { ...prev.editorial, ...partial },
-    }));
-  };
+  const updateEditorial = useCallback((partial: Partial<EditorialInfo>) => {
+    setContent((prev) => {
+      const next = { ...prev, editorial: { ...prev.editorial, ...partial } };
+      queueServerSave(next);
+      return next;
+    });
+  }, [queueServerSave]);
 
-  const updatePortfolio = (items: PortfolioItem[]) => {
-    setContent((prev) => ({
-      ...prev,
-      portfolio: items,
-    }));
-  };
+  const updatePortfolio = useCallback((items: PortfolioItem[]) => {
+    setContent((prev) => {
+      const next = { ...prev, portfolio: items };
+      queueServerSave(next);
+      return next;
+    });
+  }, [queueServerSave]);
 
   const updatePortfolioItem = useCallback((id: string, updated: Partial<PortfolioItem>) => {
-    setContent((prev) => ({
-      ...prev,
-      portfolio: prev.portfolio.map((item) => (item.id === id ? { ...item, ...updated } : item)),
-    }));
-  }, []);
+    setContent((prev) => {
+      const next = {
+        ...prev,
+        portfolio: prev.portfolio.map((item) => (item.id === id ? { ...item, ...updated } : item)),
+      };
+      queueServerSave(next);
+      return next;
+    });
+  }, [queueServerSave]);
 
   const addPortfolioItem = useCallback((item: Omit<PortfolioItem, 'id'>) => {
     const newItem: PortfolioItem = {
       ...item,
       id: `p_${Date.now()}`,
     };
-    setContent((prev) => ({
-      ...prev,
-      portfolio: [newItem, ...prev.portfolio],
-    }));
-  }, []);
+    setContent((prev) => {
+      const next = {
+        ...prev,
+        portfolio: [newItem, ...prev.portfolio],
+      };
+      queueServerSave(next);
+      return next;
+    });
+  }, [queueServerSave]);
 
   const deletePortfolioItem = useCallback((id: string) => {
-    setContent((prev) => ({
-      ...prev,
-      portfolio: prev.portfolio.filter((item) => item.id !== id),
-    }));
-  }, []);
+    setContent((prev) => {
+      const next = {
+        ...prev,
+        portfolio: prev.portfolio.filter((item) => item.id !== id),
+      };
+      queueServerSave(next);
+      return next;
+    });
+  }, [queueServerSave]);
 
-  const updateServices = (services: ServicePackage[]) => {
-    setContent((prev) => ({
-      ...prev,
-      services,
-    }));
-  };
+  const updateServices = useCallback((services: ServicePackage[]) => {
+    setContent((prev) => {
+      const next = { ...prev, services };
+      queueServerSave(next);
+      return next;
+    });
+  }, [queueServerSave]);
 
-  const updateServicePackage = (id: string, updated: Partial<ServicePackage>) => {
-    setContent((prev) => ({
-      ...prev,
-      services: prev.services.map((pkg) => (pkg.id === id ? { ...pkg, ...updated } : pkg)),
-    }));
-  };
+  const updateServicePackage = useCallback((id: string, updated: Partial<ServicePackage>) => {
+    setContent((prev) => {
+      const next = {
+        ...prev,
+        services: prev.services.map((pkg) => (pkg.id === id ? { ...pkg, ...updated } : pkg)),
+      };
+      queueServerSave(next);
+      return next;
+    });
+  }, [queueServerSave]);
 
-  const addServicePackage = (pkg: Omit<ServicePackage, 'id'>) => {
+  const addServicePackage = useCallback((pkg: Omit<ServicePackage, 'id'>) => {
     const newPkg: ServicePackage = {
       ...pkg,
       id: `s_${Date.now()}`,
     };
-    setContent((prev) => ({
-      ...prev,
-      services: [...prev.services, newPkg],
-    }));
-  };
-
-  const deleteServicePackage = (id: string) => {
-    setContent((prev) => ({
-      ...prev,
-      services: prev.services.filter((pkg) => pkg.id !== id),
-    }));
-  };
-
-  const updateFaqs = (faqs: FaqItem[]) => {
-    setContent((prev) => ({
-      ...prev,
-      faqs,
-    }));
-  };
-
-  const updateFaq = (index: number, updated: FaqItem) => {
     setContent((prev) => {
-      const next = [...prev.faqs];
-      next[index] = updated;
-      return { ...prev, faqs: next };
+      const next = {
+        ...prev,
+        services: [...prev.services, newPkg],
+      };
+      queueServerSave(next);
+      return next;
     });
-  };
+  }, [queueServerSave]);
 
-  const addFaq = (faq: FaqItem) => {
-    setContent((prev) => ({
-      ...prev,
-      faqs: [...prev.faqs, faq],
-    }));
-  };
+  const deleteServicePackage = useCallback((id: string) => {
+    setContent((prev) => {
+      const next = {
+        ...prev,
+        services: prev.services.filter((pkg) => pkg.id !== id),
+      };
+      queueServerSave(next);
+      return next;
+    });
+  }, [queueServerSave]);
 
-  const deleteFaq = (index: number) => {
-    setContent((prev) => ({
-      ...prev,
-      faqs: prev.faqs.filter((_, i) => i !== index),
-    }));
-  };
+  const updateFaqs = useCallback((faqs: FaqItem[]) => {
+    setContent((prev) => {
+      const next = { ...prev, faqs };
+      queueServerSave(next);
+      return next;
+    });
+  }, [queueServerSave]);
 
-  const resetToDefaults = () => {
+  const updateFaq = useCallback((index: number, updated: FaqItem) => {
+    setContent((prev) => {
+      const nextFaqs = [...prev.faqs];
+      nextFaqs[index] = updated;
+      const next = { ...prev, faqs: nextFaqs };
+      queueServerSave(next);
+      return next;
+    });
+  }, [queueServerSave]);
+
+  const addFaq = useCallback((faq: FaqItem) => {
+    setContent((prev) => {
+      const next = {
+        ...prev,
+        faqs: [...prev.faqs, faq],
+      };
+      queueServerSave(next);
+      return next;
+    });
+  }, [queueServerSave]);
+
+  const deleteFaq = useCallback((index: number) => {
+    setContent((prev) => {
+      const next = {
+        ...prev,
+        faqs: prev.faqs.filter((_, i) => i !== index),
+      };
+      queueServerSave(next);
+      return next;
+    });
+  }, [queueServerSave]);
+
+  const resetToDefaults = useCallback(() => {
     setContent(DEFAULT_SITE_CONTENT);
-    localStorage.removeItem(STORAGE_KEY);
-  };
+    queueServerSave(DEFAULT_SITE_CONTENT);
+  }, [queueServerSave]);
 
   const exportJson = (): string => {
     return JSON.stringify(content, null, 2);
   };
 
-  const importJson = (jsonString: string): boolean => {
+  const importJson = useCallback((jsonString: string): boolean => {
     try {
       const parsed = JSON.parse(jsonString);
       if (parsed && typeof parsed === 'object') {
-        setContent({
-          ...DEFAULT_SITE_CONTENT,
-          ...parsed,
-        });
+        const next = mergeContent(DEFAULT_SITE_CONTENT, parsed);
+        setContent(next);
+        queueServerSave(next);
         return true;
       }
     } catch (e) {
       console.error('Import JSON parse failed:', e);
     }
     return false;
-  };
+  }, [queueServerSave]);
 
   return (
     <ContentContext.Provider
