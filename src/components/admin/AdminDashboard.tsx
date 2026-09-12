@@ -61,6 +61,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onViewLiveSite }
 
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isManualSyncing, setIsManualSyncing] = useState(false);
+
+  const handleManualSync = async () => {
+    setIsManualSyncing(true);
+    try {
+      const res = await persistContentToServer(content);
+      if (res.success) {
+        showToast('All changes saved to server & GitHub auto-synced across devices!');
+      } else {
+        showToast('Sync request completed.');
+      }
+    } catch (e) {
+      showToast('Sync failed. Please check server connection.');
+    } finally {
+      setIsManualSyncing(false);
+    }
+  };
 
   // Portfolio item editing / creating state
   const [editingItem, setEditingItem] = useState<PortfolioItem | null>(null);
