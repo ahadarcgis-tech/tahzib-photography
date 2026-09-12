@@ -1510,6 +1510,81 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onViewLiveSite }
                 </p>
               </div>
 
+              {/* GitHub Cloud Auto-Sync Settings */}
+              <div className="p-5 bg-[#141210] border border-[#2E2925] rounded space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#DFB15B] font-semibold">
+                    <Sparkles className="w-4 h-4" />
+                    <span>GitHub Live Cloud Auto-Sync</span>
+                  </div>
+                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${githubToken ? 'bg-emerald-950/80 border-emerald-700 text-emerald-300' : 'bg-amber-950/80 border-amber-700 text-amber-300'}`}>
+                    {githubToken ? 'Connected to ahadarcgis-tech/tahzib-photography' : 'Token Required'}
+                  </span>
+                </div>
+
+                <p className="text-xs text-[#A8A29E] leading-relaxed">
+                  Connecting your GitHub token allows you to upload photos and edit content directly from your browser on any device (phone, laptop, iPad) without needing local development servers. All uploads are committed directly to your repository and deployed live.
+                </p>
+
+                {tokenSavedMessage && (
+                  <div className="p-2.5 bg-[#1E1B18] border border-[#DFB15B]/40 rounded text-xs font-mono text-[#DFB15B]">
+                    {tokenSavedMessage}
+                  </div>
+                )}
+
+                <div className="space-y-3 max-w-md">
+                  <div>
+                    <label className="block text-[11px] font-mono text-[#A8A29E] mb-1">
+                      GitHub Personal Access Token (PAT)
+                    </label>
+                    <input
+                      type="password"
+                      placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                      value={tokenInput}
+                      onChange={(e) => setTokenInput(e.target.value)}
+                      className="w-full bg-[#12100E] border border-[#2E2925] focus:border-[#DFB15B] px-3 py-2 text-xs text-[#F6F3EC] focus:outline-none font-mono"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        saveGithubToken(tokenInput);
+                        setTokenSavedMessage('✅ GitHub Personal Access Token saved! Live browser sync is enabled.');
+                        setTimeout(() => setTokenSavedMessage(null), 4000);
+                      }}
+                      className="bg-[#DFB15B] hover:bg-[#C99E4B] text-[#12100E] px-4 py-2 text-xs font-mono uppercase tracking-wider font-semibold cursor-pointer transition-colors"
+                    >
+                      Save GitHub Token
+                    </button>
+                    {githubToken && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          saveGithubToken('');
+                          setTokenInput('');
+                          setTokenSavedMessage('GitHub Token disconnected.');
+                          setTimeout(() => setTokenSavedMessage(null), 3000);
+                        }}
+                        className="bg-[#241F1C] hover:bg-[#3E3834] text-[#A8A29E] border border-[#3E3834] px-3 py-2 text-xs font-mono uppercase tracking-wider cursor-pointer transition-colors"
+                      >
+                        Disconnect
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="pt-2 text-[11px] text-[#78716C] font-mono leading-normal">
+                    💡 How to get your free token in 1 minute:
+                    <ol className="list-decimal list-inside space-y-1 mt-1 text-[#A8A29E]">
+                      <li>Go to GitHub → Settings → Developer Settings → Personal Access Tokens</li>
+                      <li>Click "Generate new token (classic)" with scope <code className="text-[#DFB15B]">repo</code></li>
+                      <li>Copy the generated token and paste it here!</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+
               {/* Change Credentials Form */}
               <div className="p-5 bg-[#141210] border border-[#2E2925] rounded space-y-4">
                 <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#DFB15B] font-semibold">
