@@ -55,10 +55,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onViewLiveSite }
     adminUsername,
     changeCredentials,
     isLiveSite,
+    githubToken,
+    saveGithubToken,
   } = useContent();
 
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [tokenInput, setTokenInput] = useState(githubToken);
+  const [tokenSavedMessage, setTokenSavedMessage] = useState<string | null>(null);
 
   // Portfolio item editing / creating state
   const [editingItem, setEditingItem] = useState<PortfolioItem | null>(null);
