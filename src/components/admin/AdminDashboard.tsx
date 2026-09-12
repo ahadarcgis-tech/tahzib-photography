@@ -54,6 +54,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onViewLiveSite }
     logout,
     adminUsername,
     changeCredentials,
+    isLiveSite,
   } = useContent();
 
   const [activeTab, setActiveTab] = useState<TabType>('overview');
