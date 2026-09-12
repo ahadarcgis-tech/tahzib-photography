@@ -216,6 +216,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onViewLiveSite }
         </div>
       )}
 
+      {/* Live Site Warning Banner */}
+      {isLiveSite && (
+        <div className="bg-red-900/90 text-white px-4 sm:px-8 py-3 flex flex-col md:flex-row items-center justify-between shadow-md z-50 border-b border-red-800">
+          <div className="flex items-center gap-3 mb-2 md:mb-0">
+            <AlertCircle className="w-5 h-5 text-red-300" />
+            <div>
+              <h3 className="font-medium text-sm">Read-Only Mode: Live Site</h3>
+              <p className="text-red-200 text-xs">
+                You are viewing the live Netlify site. Changes made here will NOT be permanent and image uploads will fail.
+              </p>
+            </div>
+          </div>
+          <div className="text-xs font-mono bg-red-950 px-3 py-1.5 rounded border border-red-700 text-center text-red-200">
+            To edit, run <code className="text-red-300 bg-black/30 px-1 py-0.5 rounded mx-1">npm run dev</code> locally
+          </div>
+        </div>
+      )}
+
       {/* Top Navigation Bar */}
       <header className="sticky top-0 z-40 bg-[#171412]/95 backdrop-blur-md border-b border-[#2E2925] px-4 sm:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
