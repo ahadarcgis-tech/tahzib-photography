@@ -21,8 +21,11 @@ import {
   Eye,
   AlertCircle,
   Lock,
+  RefreshCw,
+  Cloud,
 } from 'lucide-react';
 import { useContent } from '../../context/ContentContext';
+import { persistContentToServer } from '../../utils/api';
 import { ImageUploadField } from './ImageUploadField';
 import { PortfolioCategory, PortfolioItem, ServicePackage, FaqItem } from '../../types';
 
